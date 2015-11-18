@@ -1,0 +1,9 @@
+aws_access_key = ""
+aws_secret_key = ""
+
+aws_key_path = "~/.ssh/default.rsa"
+aws_key_name = "default"
+
+kafka_nodes = 3
+kafka_size = "t2.medium"
+zookeeper_size = "t2.small"

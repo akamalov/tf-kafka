@@ -1,0 +1,15 @@
+#cloud-config
+coreos:
+  etcd2:
+    #generate a new token for each unique cluster from https://discovery.etcd.io/new
+    discovery: https://discovery.etcd.io/0048fa5a15f1b3bab264660825df5300
+    advertise-client-urls: http://$private_ipv4:4001
+    initial-advertise-peer-urls: http://$private_ipv4:7001
+    listen-client-urls: http://$private_ipv4:4001
+    listen-peer-urls: http://$private_ipv4:7001
+  units:
+    - name: etcd2.service
+      command: start
+    - name: docker.service
+      command: start
+      enable: true
