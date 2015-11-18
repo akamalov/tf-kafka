@@ -6,4 +6,5 @@ aws_key_name = "default"
 
 kafka_nodes = 3
 kafka_size = "t2.medium"
+kafka_partitions = 3
 zookeeper_size = "t2.small"

@@ -1,0 +1,11 @@
+[Unit]
+Description=Kafka
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/kafka-server-start /etc/kafka/server.properties
+User=kafka
+
+[Install]
+WantedBy=multi-user.target
