@@ -19,6 +19,11 @@ variable "kafka_partitions" {
     default = 3
 }
 
+variable "kafka_replication" {
+    description = "Replication factor for Kafka"
+    default = 3
+}
+
 variable "zookeeper_size" {
     description = "Size of the Zookeeper instance"
     default = "t2.small"

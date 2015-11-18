@@ -79,6 +79,7 @@ resource "aws_instance" "kafka" {
             "sudo sed -i s/zookeeper.connect=localhost:2181/zookeeper.connect=${aws_instance.zookeeper.private_ip}:2181/ /etc/kafka/server.properties",
             "sudo sed -i s/broker.id=0/broker.id=${count.index + 1}/ /etc/kafka/server.properties",
             "sudo sed -i s/num.partitions=1/num.partitions=${var.kafka_partitions}/ /etc/kafka/server.properties",
+            "sudo sed -i s/default.replication.factor=1/default.replication.factor=${var.kafka_replication}/ /etc/kafka/server.properties",
             "sudo useradd --home-dir /var/lib/kafka --create-home --user-group --shell /usr/sbin/nologin kafka",
             "sudo chown -R kafka:kafka /var/lib/kafka",
             "sudo chown -R kafka:kafka /var/log/kafka"
