@@ -1,4 +1,4 @@
-# Kafka on CoreOS
+# Kafka on Debian
 
 ## Deploy
 
