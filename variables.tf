@@ -24,6 +24,11 @@ variable "kafka_replication" {
     default = 3
 }
 
+variable "zookeeper_nodes" {
+    description = "Amount of Zookeeper nodes to be deployed."
+    default = 3
+}
+
 variable "zookeeper_size" {
     description = "Size of the Zookeeper instance"
     default = "t2.small"

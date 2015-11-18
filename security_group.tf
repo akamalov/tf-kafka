@@ -1,6 +1,7 @@
 resource "aws_security_group" "common" {
     name = "kafka-cluster-admin"
     description = "Kafka cluster administrative SG"
+    vpc_id = "${aws_vpc.default.id}"
 }
 
 resource "aws_security_group_rule" "admin-ssh" {
@@ -34,6 +35,7 @@ resource "aws_security_group_rule" "allow-out" {
 resource "aws_security_group" "kafka" {
     name = "kafka-cluster"
     description = "Kafka cluster SG"
+    vpc_id = "${aws_vpc.default.id}"
 }
 
 resource "aws_security_group_rule" "kafka-self-allow-in" {
@@ -67,6 +69,7 @@ resource "aws_security_group_rule" "kafka-allow-out-zookeeper" {
 resource "aws_security_group" "zookeeper" {
     name = "kafka-cluster-zookeeper"
     description = "Kafka cluster Zookeeper SG"
+    vpc_id = "${aws_vpc.default.id}"
 }
 
 resource "aws_security_group_rule" "zookeeper-self-allow-in" {
