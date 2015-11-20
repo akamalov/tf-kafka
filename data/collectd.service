@@ -1,0 +1,11 @@
+[Unit]
+Description=CollectD metrics collection
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/var/run/collectd.pid
+ExecStart=/opt/collectd/sbin/collectd
+
+[Install]
+WantedBy=multi-user.target

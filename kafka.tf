@@ -26,7 +26,7 @@ resource "aws_instance" "kafka" {
         inline = [
             "sudo apt-get update",
             "sudo apt-get upgrade -y",
-            "sudo apt-get install -y curl default-jdk software-properties-common collectd collectd-utils",
+            "sudo apt-get install -y curl default-jdk software-properties-common",
             "curl -s http://packages.confluent.io/deb/1.0/archive.key | sudo apt-key add -",
             "sudo add-apt-repository 'deb [arch=all] http://packages.confluent.io/deb/1.0 stable main'",
             "sudo apt-get update && sudo apt-get install -y confluent-platform-2.10.4",
@@ -37,6 +37,10 @@ resource "aws_instance" "kafka" {
             "sudo useradd --home-dir /var/lib/kafka --create-home --user-group --shell /usr/sbin/nologin kafka",
             "sudo chown -R kafka:kafka /var/lib/kafka",
             "sudo chown -R kafka:kafka /var/log/kafka",
+            "sudo apt-get build-dep -y collectd collectd-utils",
+            "curl -Ls http://collectd.org/files/collectd-5.5.0.tar.gz > /tmp/collectd.tar.gz",
+            "cd /tmp && tar xzf collectd.tar.gz",
+            "cd /tmp/collectd-5.5.0 && ./configure && make && sudo make install",
             "curl -Ls https://github.com/prometheus/prometheus/releases/download/0.16.1/prometheus-0.16.1.linux-amd64.tar.gz > /tmp/prometheus.tar.gz",
             "cd /tmp && tar xzf prometheus.tar.gz && sudo mv prometheus-0.16.1.linux-amd64 /opt/prometheus",
             "curl -Ls https://github.com/prometheus/collectd_exporter/releases/download/0.2.0/collectd_exporter-0.2.0.linux-amd64.tar.gz > /tmp/collectd_exporter.tar.gz",
@@ -62,6 +66,11 @@ resource "aws_instance" "kafka" {
     }
 
     provisioner "file" {
+        source = "data/collectd.service"
+        destination = "/home/admin/collectd.service"
+    }
+
+    provisioner "file" {
         source = "data/prometheus.yml"
         destination = "/home/admin/prometheus.yml"
     }
@@ -83,8 +92,11 @@ resource "aws_instance" "kafka" {
             "sudo mv /home/admin/kafka.service /etc/systemd/system",
             "sudo systemctl enable kafka",
             "sudo systemctl start kafka",
-            "sudo mv /home/admin/collectd.conf /etc/collectd/collectd.conf && sudo chown root:root /etc/collectd/collectd.conf",
-            "sudo sh -c 'echo Hostname \"${format("kafka-node-%03d", count.index + 1)}\" >> /etc/collectd/collectd.conf'",
+            "sudo mv /home/admin/collectd.conf /opt/collectd/etc/collectd.conf && sudo chown root:root /opt/collectd/etc/collectd.conf",
+            "sudo sh -c 'echo Hostname \"${format("kafka-node-%03d", count.index + 1)}\" >> /opt/collectd/etc/collectd.conf'",
+            "sudo mv /home/admin/collectd.conf /opt/collectd/etc/collectd.conf",
+            "sudo mv /home/admin/collectd.service /etc/systemd/system",
+            "sudo chown root:root /etc/systemd/system/collectd.service",
             "sudo mv /home/admin/prometheus.yml /opt/prometheus && sudo chown prometheus:prometheus /opt/prometheus/prometheus.yml",
             "sudo mv /home/admin/prometheus.service /etc/systemd/system && sudo chown root:root /etc/systemd/system/prometheus.service",
             "sudo mv /home/admin/collectd_exporter.service /etc/systemd/system && sudo chown root:root /etc/systemd/system/collectd_exporter.service",
@@ -95,9 +107,9 @@ resource "aws_instance" "kafka" {
 }
 
 output "kafka.brokers_private" {
-  value = "${join(",", aws_instance.kafka.*.private_ip)}"
+    value = "${join(",", aws_instance.kafka.*.private_ip)}"
 }
 
 output "kafka.brokers_public" {
-  value = "${join(",", aws_instance.kafka.*.public_ip)}"
+    value = "${join(",", aws_instance.kafka.*.public_ip)}"
 }
