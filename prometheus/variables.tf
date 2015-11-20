@@ -4,39 +4,28 @@ variable "aws_secret_key" {}
 variable "aws_key_path" {}
 variable "aws_key_name" {}
 
-variable "kafka_nodes" {
-    description = "Amount of Kafka nodes to be deployed."
-    default = 3
+variable "allowed_group" {
+    description = "Security Group ID that should be allowed to access Prometheus"
 }
 
-variable "kafka_size" {
-    description = "Size of the Kafka instances"
-    default = "t2.medium"
+variable "name" {
+    description = "Name of the appliance, that this prometheus instance will handle"
 }
 
-variable "kafka_partitions" {
-    description = "Number of Kafka partitions per topic"
-    default = 3
+variable "size" {
+    description = "Size of the instance to be running prometheus"
 }
 
-variable "kafka_replication" {
-    description = "Replication factor for Kafka"
-    default = 3
+variable "vpc_id" {
+    description = "ID of the VPC to launch in"
 }
 
-variable "zookeeper_nodes" {
-    description = "Amount of Zookeeper nodes to be deployed."
-    default = 3
+variable "subnet_id" {
+    description = "ID of the Subnet to launch in"
 }
 
-variable "zookeeper_size" {
-    description = "Size of the Zookeeper instance"
-    default = "t2.small"
-}
-
-variable "prometheus_size" {
-    description = "Size of the Prometheus instance"
-    default = "t2.small"
+variable "private_ip" {
+    description = "Private IP to assign to the prometheus instance"
 }
 
 variable "admin_ip" {
@@ -49,12 +38,7 @@ variable "aws_region" {
     default = "eu-central-1"
 }
 
-variable "aws_zone" {
-    description = "EC2 Availability Zone for the VPC and Instance"
-    default = "eu-central-1a"
-}
-
-variable "amis-hvm" {
+variable "amis_hvm" {
     description = "AMIs by region (HVM)"
     default = {
         ap-northeast-1 = "ami-e624fbe6"
@@ -71,7 +55,7 @@ variable "amis-hvm" {
     }
 }
 
-variable "amis-pv" {
+variable "amis_pv" {
     description = "AMIs by region (Paravirtual)"
     default = {
         ap-northeast-1 = "ami-0822fd08"

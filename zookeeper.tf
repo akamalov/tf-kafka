@@ -41,12 +41,6 @@ resource "aws_instance" "zookeeper" {
             "curl -Ls http://collectd.org/files/collectd-5.5.0.tar.gz > /tmp/collectd.tar.gz",
             "cd /tmp && tar xzf collectd.tar.gz",
             "cd /tmp/collectd-5.5.0 && ./configure && make && sudo make install",
-            "curl -Ls https://github.com/prometheus/prometheus/releases/download/0.16.1/prometheus-0.16.1.linux-amd64.tar.gz > /tmp/prometheus.tar.gz",
-            "cd /tmp && tar xzf prometheus.tar.gz && sudo mv prometheus-0.16.1.linux-amd64 /opt/prometheus",
-            "curl -Ls https://github.com/prometheus/collectd_exporter/releases/download/0.2.0/collectd_exporter-0.2.0.linux-amd64.tar.gz > /tmp/collectd_exporter.tar.gz",
-            "cd /tmp && tar xzf collectd_exporter.tar.gz && sudo mv collectd_exporter /opt/prometheus",
-            "sudo useradd --home-dir /opt/prometheus --create-home --user-group --shell /usr/sbin/nologin prometheus",
-            "sudo chown -R prometheus:prometheus /opt/prometheus"
         ]
     }
 
@@ -70,21 +64,6 @@ resource "aws_instance" "zookeeper" {
         destination = "/home/admin/collectd.service"
     }
 
-    provisioner "file" {
-        source = "data/prometheus.yml"
-        destination = "/home/admin/prometheus.yml"
-    }
-
-    provisioner "file" {
-        source = "data/prometheus.service"
-        destination = "/home/admin/prometheus.service"
-    }
-
-    provisioner "file" {
-        source = "data/collectd_exporter.service"
-        destination = "/home/admin/collectd_exporter.service"
-    }
-
     provisioner "remote-exec" {
         inline = [
             "chmod +x /home/admin/add_server.sh",
@@ -95,11 +74,11 @@ resource "aws_instance" "zookeeper" {
             "sudo mv /home/admin/collectd.conf /opt/collectd/etc/collectd.conf && sudo chown root:root /opt/collectd/etc/collectd.conf",
             "sudo sh -c 'echo Hostname \"${format("zookeeper-node-%03d", count.index + 1)}\" >> /opt/collectd/etc/collectd.conf'",
             "sudo mv /home/admin/collectd.conf /opt/collectd/etc/collectd.conf",
-            "sudo mv /home/admin/prometheus.yml /opt/prometheus && sudo chown prometheus:prometheus /opt/prometheus/prometheus.yml",
-            "sudo mv /home/admin/prometheus.service /etc/systemd/system && sudo chown root:root /etc/systemd/system/prometheus.service",
-            "sudo mv /home/admin/collectd_exporter.service /etc/systemd/system && sudo chown root:root /etc/systemd/system/collectd_exporter.service",
-            "sudo systemctl restart prometheus collectd_exporter collectd",
-            "sudo systemctl enable prometheus collectd_exporter collectd"
+            "sudo mv /home/admin/collectd.service /etc/systemd/system",
+            "sudo chown root:root /etc/systemd/system/collectd.service",
+            "sudo sed -i s/PROMETHEUS/${module.prometheus.private_ip}/ /opt/collectd/etc/collectd.conf",
+            "sudo systemctl restart collectd",
+            "sudo systemctl enable collectd"
         ]
     }
 }
