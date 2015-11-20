@@ -22,6 +22,15 @@ resource "aws_security_group_rule" "admin-icmp" {
     security_group_id = "${aws_security_group.common.id}"
 }
 
+resource "aws_security_group_rule" "admin-ssh" {
+    type = "ingress"
+    protocol = "tcp"
+    from_port = 9090
+    to_port = 9090
+    cidr_blocks = ["${var.admin_ip}"]
+    security_group_id = "${aws_security_group.common.id}"
+}
+
 resource "aws_security_group_rule" "allow-out" {
     type = "egress"
     from_port = 0
