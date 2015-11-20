@@ -1,0 +1,12 @@
+[Unit]
+Description=Prometheus
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/prometheus
+ExecStart=/opt/prometheus/prometheus
+User=prometheus
+
+[Install]
+WantedBy=multi-user.target

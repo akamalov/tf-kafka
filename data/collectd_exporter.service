@@ -1,0 +1,12 @@
+[Unit]
+Description=Prometheus Collectd exporter
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/prometheus
+ExecStart=/opt/prometheus/collectd_exporter -collectd.listen-address=127.0.0.1:25826
+User=prometheus
+
+[Install]
+WantedBy=multi-user.target
