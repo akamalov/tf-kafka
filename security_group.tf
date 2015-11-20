@@ -22,7 +22,7 @@ resource "aws_security_group_rule" "admin-icmp" {
     security_group_id = "${aws_security_group.common.id}"
 }
 
-resource "aws_security_group_rule" "admin-ssh" {
+resource "aws_security_group_rule" "admin-prometheus" {
     type = "ingress"
     protocol = "tcp"
     from_port = 9090
