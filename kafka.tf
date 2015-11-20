@@ -2,7 +2,7 @@ resource "aws_instance" "kafka" {
     count = "${var.kafka_nodes}"
 
     ami = "${lookup(var.amis-hvm, var.aws_region)}"
-    instance_type = "t2.medium"
+    instance_type = "${var.kafka_size}"
 
     key_name = "${var.aws_key_name}"
 
@@ -17,10 +17,12 @@ resource "aws_instance" "kafka" {
         Index = "${count.index + 1}"
     }
 
+    connection {
+        type = "ssh"
+        user = "admin"
+    }
+
     provisioner "remote-exec" {
-        connection {
-            user = "admin"
-        }
         inline = [
             "sudo apt-get update",
             "sudo apt-get upgrade -y",
@@ -39,25 +41,16 @@ resource "aws_instance" "kafka" {
     }
 
     provisioner "file" {
-        connection {
-            user = "admin"
-        }
         source = "data/kafka.service"
         destination = "/home/admin/kafka.service"
     }
 
     provisioner "file" {
-        connection {
-            user = "admin"
-        }
         source = "data/set_kafka_host.sh"
         destination = "/home/admin/set_kafka_host.sh"
     }
 
     provisioner "remote-exec" {
-        connection {
-            user = "admin"
-        }
         inline = [
             "chmod +x /home/admin/set_kafka_host.sh",
             "sudo /home/admin/set_kafka_host.sh",
@@ -66,4 +59,12 @@ resource "aws_instance" "kafka" {
             "sudo systemctl start kafka"
         ]
     }
+}
+
+output "kafka.brokers_private" {
+  value = "${join(",", aws_instance.kafka.*.private_ip)}"
+}
+
+output "kafka.brokers_public" {
+  value = "${join(",", aws_instance.kafka.*.public_ip)}"
 }

@@ -2,7 +2,7 @@ resource "aws_instance" "zookeeper" {
     count = "${var.zookeeper_nodes}"
 
     ami = "${lookup(var.amis-hvm, var.aws_region)}"
-    instance_type = "t2.small"
+    instance_type = "${var.zookeeper_size}"
 
     key_name = "${var.aws_key_name}"
 
@@ -17,10 +17,12 @@ resource "aws_instance" "zookeeper" {
         Index = "${count.index + 1}"
     }
 
+    connection {
+        type = "ssh"
+        user = "admin"
+    }
+
     provisioner "remote-exec" {
-        connection {
-            user = "admin"
-        }
         inline = [
             "sudo apt-get update",
             "sudo apt-get upgrade -y",
@@ -39,25 +41,16 @@ resource "aws_instance" "zookeeper" {
     }
 
     provisioner "file" {
-        connection {
-            user = "admin"
-        }
         source = "data/zookeeper.service"
         destination = "/home/admin/zookeeper.service"
     }
 
     provisioner "file" {
-        connection {
-            user = "admin"
-        }
         source = "data/add_server.sh"
         destination = "/home/admin/add_server.sh"
     }
 
     provisioner "remote-exec" {
-        connection {
-            user = "admin"
-        }
         inline = [
             "chmod +x /home/admin/add_server.sh",
             "sudo /home/admin/add_server.sh ${var.zookeeper_nodes}",
@@ -66,4 +59,12 @@ resource "aws_instance" "zookeeper" {
             "sudo systemctl start zookeeper"
         ]
     }
+}
+
+output "zookeeper.nodes_private" {
+  value = "${join(",", aws_instance.zookeeper.*.private_ip)}"
+}
+
+output "zookeeper.nodes_public" {
+  value = "${join(",", aws_instance.zookeeper.*.public_ip)}"
 }
