@@ -31,7 +31,7 @@ add-apt-repository 'deb [arch=all] http://packages.confluent.io/deb/1.0 stable m
 apt-get update
 apt-get install -y confluent-platform-2.10.4
 
-sed -i 's/log.dirs=.*$/log.dirs=/var/lib/kafka/data/' /etc/kafka/server.properties
+sed -i 's,log.dirs=.*$,log.dirs=/var/lib/kafka/data,' /etc/kafka/server.properties
 sed -i "s/zookeeper.connect=localhost:2181/zookeeper.connect=${ZK_IPS}/" \
   /etc/kafka/server.properties
 sed -i "s/broker.id=0/broker.id=${INDEX}/" /etc/kafka/server.properties
