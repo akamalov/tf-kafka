@@ -38,11 +38,17 @@ resource "aws_instance" "prometheus" {
 
     provisioner "remote-exec" {
         inline = [
-            "sudo mv /home/admin/prometheus.yml /opt/prometheus && sudo chown prometheus:prometheus /opt/prometheus/prometheus.yml",
-            "sudo mv /home/admin/prometheus.service /etc/systemd/system && sudo chown root:root /etc/systemd/system/prometheus.service",
-            "sudo mv /home/admin/collectd_exporter.service /etc/systemd/system && sudo chown root:root /etc/systemd/system/collectd_exporter.service",
-            "sudo systemctl restart prometheus collectd_exporter",
-            "sudo systemctl enable prometheus collectd_exporter"
+            "sudo mv /home/admin/prometheus.yml /opt/prometheus",
+            "sudo chown prometheus:prometheus /opt/prometheus/prometheus.yml",
+
+            "sudo mv /home/admin/prometheus.service /etc/systemd/system",
+            "sudo chown root:root /etc/systemd/system/prometheus.service",
+
+            "sudo mv /home/admin/collectd_exporter.service /etc/systemd/system",
+            "sudo chown root:root /etc/systemd/system/collectd_exporter.service",
+
+            "sudo systemctl enable prometheus collectd_exporter",
+            "sudo systemctl restart prometheus collectd_exporter"
         ]
     }
 }

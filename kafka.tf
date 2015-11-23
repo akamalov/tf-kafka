@@ -29,31 +29,9 @@ resource "aws_instance" "kafka" {
         user = "admin"
     }
 
-    provisioner "remote-exec" {
-        inline = [
-            "sudo apt-get update",
-            "sudo apt-get upgrade -y",
-            "sudo apt-get install -y curl default-jdk software-properties-common",
-            "sudo mkfs -t ext4 /dev/xvdh",
-            "sudo mkdir -p /var/lib/kafka",
-            "sudo mount /dev/xvdh /var/lib/kafka",
-            "sudo mkdir /var/lib/kafka/data",
-            "curl -s http://packages.confluent.io/deb/1.0/archive.key | sudo apt-key add -",
-            "sudo add-apt-repository 'deb [arch=all] http://packages.confluent.io/deb/1.0 stable main'",
-            "sudo apt-get update && sudo apt-get install -y confluent-platform-2.10.4",
-            "sed -i s/log.dirs=.*$/log.dirs=/var/lib/kafka/data/ /etc/kafka/server.properties",
-            "sudo sed -i s/zookeeper.connect=localhost:2181/zookeeper.connect=${join(",",formatlist("%s:%s", aws_instance.zookeeper.*.private_ip, "2181"))}/ /etc/kafka/server.properties",
-            "sudo sed -i s/broker.id=0/broker.id=${count.index + 1}/ /etc/kafka/server.properties",
-            "sudo sed -i s/num.partitions=1/num.partitions=${var.kafka_partitions}/ /etc/kafka/server.properties",
-            "sudo sed -i s/default.replication.factor=1/default.replication.factor=${var.kafka_replication}/ /etc/kafka/server.properties",
-            "sudo useradd --home-dir /var/lib/kafka --create-home --user-group --shell /usr/sbin/nologin kafka",
-            "sudo chown -R kafka:kafka /var/lib/kafka",
-            "sudo chown -R kafka:kafka /var/log/kafka",
-            "sudo apt-get build-dep -y collectd collectd-utils",
-            "curl -Ls http://collectd.org/files/collectd-5.5.0.tar.gz > /tmp/collectd.tar.gz",
-            "cd /tmp && tar xzf collectd.tar.gz",
-            "cd /tmp/collectd-5.5.0 && ./configure && make && sudo make install",
-        ]
+    provisioner "file" {
+        source = "sh/setup_kafka.sh"
+        destination = "/home/admin/setup_kafka.sh"
     }
 
     provisioner "file" {
@@ -62,8 +40,8 @@ resource "aws_instance" "kafka" {
     }
 
     provisioner "file" {
-        source = "data/set_kafka_host.sh"
-        destination = "/home/admin/set_kafka_host.sh"
+        source = "sh/setup_collectd.sh"
+        destination = "/home/admin/setup_collectd.sh"
     }
 
     provisioner "file" {
@@ -78,19 +56,20 @@ resource "aws_instance" "kafka" {
 
     provisioner "remote-exec" {
         inline = [
-            "chmod +x /home/admin/set_kafka_host.sh",
-            "sudo /home/admin/set_kafka_host.sh",
-            "sudo mv /home/admin/kafka.service /etc/systemd/system",
-            "sudo systemctl enable kafka",
-            "sudo systemctl start kafka",
-            "sudo mv /home/admin/collectd.conf /opt/collectd/etc/collectd.conf && sudo chown root:root /opt/collectd/etc/collectd.conf",
-            "sudo sh -c 'echo Hostname \"${format("kafka-node-%03d", count.index + 1)}\" >> /opt/collectd/etc/collectd.conf'",
-            "sudo mv /home/admin/collectd.conf /opt/collectd/etc/collectd.conf",
-            "sudo mv /home/admin/collectd.service /etc/systemd/system",
-            "sudo chown root:root /etc/systemd/system/collectd.service",
-            "sudo sed -i s/PROMETHEUS/${module.prometheus.private_ip}/ /opt/collectd/etc/collectd.conf",
-            "sudo systemctl restart collectd",
-            "sudo systemctl enable collectd"
+            "sudo apt-get update",
+            "sudo apt-get upgrade -y",
+
+            "chmod +x /home/admin/setup_kafka.sh",
+            "sudo /home/admin/setup_kafka.sh \\",
+            "  ${join(",",formatlist("%s:%s", aws_instance.zookeeper.*.private_ip, "2181"))} \\",
+            "  ${count.index + 1} \\",
+            "  ${var.kafka_partitions} \\",
+            "  ${var.kafka_replication}",
+
+            "chmod +x setup_collectd.sh",
+            "./setup_collectd.sh \\",
+            "  ${format("kafka-node-%03d", count.index + 1)} \\",
+            "  ${module.prometheus.private_ip}"
         ]
     }
 }

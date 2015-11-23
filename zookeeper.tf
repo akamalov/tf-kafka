@@ -22,26 +22,9 @@ resource "aws_instance" "zookeeper" {
         user = "admin"
     }
 
-    provisioner "remote-exec" {
-        inline = [
-            "sudo apt-get update",
-            "sudo apt-get upgrade -y",
-            "sudo apt-get install -y curl default-jdk software-properties-common",
-            "curl -s http://packages.confluent.io/deb/1.0/archive.key | sudo apt-key add -",
-            "sudo add-apt-repository 'deb [arch=all] http://packages.confluent.io/deb/1.0 stable main'",
-            "sudo apt-get update && sudo apt-get install -y confluent-platform-2.10.4",
-            "sudo useradd --home-dir /var/lib/zookeeper --create-home --user-group --shell /usr/sbin/nologin zookeeper",
-            "sudo chown -R zookeeper:zookeeper /var/lib/zookeeper",
-            "sudo chown -R zookeeper:zookeeper /var/log/kafka",
-            "sudo sh -c 'echo tickTime=2000 >> /etc/kafka/zookeeper.properties'",
-            "sudo sh -c 'echo initLimit=10 >> /etc/kafka/zookeeper.properties'",
-            "sudo sh -c 'echo syncLimit=5 >> /etc/kafka/zookeeper.properties'",
-            "sudo sh -c 'echo ${count.index + 1} > /var/lib/zookeeper/myid'",
-            "sudo apt-get build-dep -y collectd collectd-utils",
-            "curl -Ls http://collectd.org/files/collectd-5.5.0.tar.gz > /tmp/collectd.tar.gz",
-            "cd /tmp && tar xzf collectd.tar.gz",
-            "cd /tmp/collectd-5.5.0 && ./configure && make && sudo make install",
-        ]
+    provisioner "file" {
+        source = "sh/setup_zookeeper.sh"
+        destination = "/home/admin/setup_zookeeper.sh"
     }
 
     provisioner "file" {
@@ -50,8 +33,8 @@ resource "aws_instance" "zookeeper" {
     }
 
     provisioner "file" {
-        source = "data/add_server.sh"
-        destination = "/home/admin/add_server.sh"
+        source = "sh/setup_collectd.sh"
+        destination = "/home/admin/setup_collectd.sh"
     }
 
     provisioner "file" {
@@ -66,19 +49,18 @@ resource "aws_instance" "zookeeper" {
 
     provisioner "remote-exec" {
         inline = [
-            "chmod +x /home/admin/add_server.sh",
-            "sudo /home/admin/add_server.sh ${var.zookeeper_nodes}",
-            "sudo mv /home/admin/zookeeper.service /etc/systemd/system",
-            "sudo systemctl enable zookeeper",
-            "sudo systemctl start zookeeper",
-            "sudo mv /home/admin/collectd.conf /opt/collectd/etc/collectd.conf && sudo chown root:root /opt/collectd/etc/collectd.conf",
-            "sudo sh -c 'echo Hostname \"${format("zookeeper-node-%03d", count.index + 1)}\" >> /opt/collectd/etc/collectd.conf'",
-            "sudo mv /home/admin/collectd.conf /opt/collectd/etc/collectd.conf",
-            "sudo mv /home/admin/collectd.service /etc/systemd/system",
-            "sudo chown root:root /etc/systemd/system/collectd.service",
-            "sudo sed -i s/PROMETHEUS/${module.prometheus.private_ip}/ /opt/collectd/etc/collectd.conf",
-            "sudo systemctl restart collectd",
-            "sudo systemctl enable collectd"
+            "sudo apt-get update",
+            "sudo apt-get upgrade -y",
+
+            "chmod +x setup_zookeeper.sh",
+            "sudo /home/admin/setup_zookeeper.sh \\",
+            "  ${count.index + 1} \\",
+            "  ${var.zookeeper_nodes}",
+
+            "chmod +x setup_collectd.sh",
+            "./setup_collectd.sh \\",
+            "  ${format("zookeeper-node-%03d", count.index + 1)} \\",
+            "  ${module.prometheus.private_ip}",
         ]
     }
 }
