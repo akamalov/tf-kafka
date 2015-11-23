@@ -3,9 +3,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 LOCAL_NAME=${1:-""}
-PROMETHEUS=${1:-""}
-
-COLLECTD_VERSION="5.5.0"
+PROMETHEUS=${2:-""}
 
 die() {
   echo "Usage: $0 HOSTNAME PROMETHEUS_IP"
@@ -15,26 +13,17 @@ die() {
 test -z "$LOCAL_NAME" && die
 test -z "$PROMETHEUS" && die
 
-sudo apt-get build-dep -y collectd collectd-utils
+echo 'deb http://http.debian.net/debian jessie-backports main' >> /etc/apt/sources.list
+apt-get update
+# installation fails because of invalid configuration file
+apt-get -t jessie-backports install -y collectd collectd-utils || true
 
-cd /tmp
-curl -Ls "http://collectd.org/files/collectd-${COLLECTD_VERSION}.tar.gz" > /tmp/collectd.tar.gz
-tar xzf collectd.tar.gz
+COLLECTD_CONF="/etc/collectd/collectd.conf"
 
-cd "/tmp/collectd-$COLLECTD_VERSION"
-./configure
-make
-sudo make install
+mv /home/admin/collectd.conf "$COLLECTD_CONF"
+chown root:root "$COLLECTD_CONF"
+sh -c "echo Hostname \"${LOCAL_NAME}\" >> $COLLECTD_CONF"
+sed -i s/PROMETHEUS/"$PROMETHEUS"/ "$COLLECTD_CONF"
 
-COLLECTD_CONF="/opt/collectd/etc/collectd.conf"
-
-sudo mv /home/admin/collectd.conf "$COLLECTD_CONF"
-sudo chown root:root "$COLLECTD_CONF"
-sudo sh -c "'echo Hostname \"${LOCAL_NAME}\"' >> $COLLECTD_CONF"
-sudo sed -i s/PROMETHEUS/"$PROMETHEUS"/ "$COLLECTD_CONF"
-
-sudo mv /home/admin/collectd.service /etc/systemd/system
-sudo chown root:root /etc/systemd/system/collectd.service
-
-sudo systemctl enable collectd
-sudo systemctl restart collectd
+systemctl enable collectd
+systemctl restart collectd

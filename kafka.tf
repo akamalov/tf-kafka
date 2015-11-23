@@ -49,11 +49,6 @@ resource "aws_instance" "kafka" {
         destination = "/home/admin/collectd.conf"
     }
 
-    provisioner "file" {
-        source = "data/collectd.service"
-        destination = "/home/admin/collectd.service"
-    }
-
     provisioner "remote-exec" {
         inline = [
             "sudo apt-get update",
@@ -67,7 +62,7 @@ resource "aws_instance" "kafka" {
             "  ${var.kafka_replication}",
 
             "chmod +x setup_collectd.sh",
-            "./setup_collectd.sh \\",
+            "sudo /home/admin/setup_collectd.sh \\",
             "  ${format("kafka-node-%03d", count.index + 1)} \\",
             "  ${module.prometheus.private_ip}"
         ]
