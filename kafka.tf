@@ -17,6 +17,13 @@ resource "aws_instance" "kafka" {
         Index = "${count.index + 1}"
     }
 
+    ebs_block_device {
+        device_name = "/dev/xvdh"
+        volume_type = "io1"
+        volume_size = 100
+        iops = 3000
+    }
+
     connection {
         type = "ssh"
         user = "admin"
@@ -27,9 +34,14 @@ resource "aws_instance" "kafka" {
             "sudo apt-get update",
             "sudo apt-get upgrade -y",
             "sudo apt-get install -y curl default-jdk software-properties-common",
+            "sudo mkfs -t ext4 /dev/xvdh",
+            "sudo mkdir -p /var/lib/kafka",
+            "sudo mount /dev/xvdh /var/lib/kafka",
+            "sudo mkdir /var/lib/kafka/data",
             "curl -s http://packages.confluent.io/deb/1.0/archive.key | sudo apt-key add -",
             "sudo add-apt-repository 'deb [arch=all] http://packages.confluent.io/deb/1.0 stable main'",
             "sudo apt-get update && sudo apt-get install -y confluent-platform-2.10.4",
+            "sed -i s/log.dirs=.*$/log.dirs=/var/lib/kafka/data/ /etc/kafka/server.properties",
             "sudo sed -i s/zookeeper.connect=localhost:2181/zookeeper.connect=${join(",",formatlist("%s:%s", aws_instance.zookeeper.*.private_ip, "2181"))}/ /etc/kafka/server.properties",
             "sudo sed -i s/broker.id=0/broker.id=${count.index + 1}/ /etc/kafka/server.properties",
             "sudo sed -i s/num.partitions=1/num.partitions=${var.kafka_partitions}/ /etc/kafka/server.properties",
